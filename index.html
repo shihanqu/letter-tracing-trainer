@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description"
+    content="A fun tracing app to help kids learn to write letters and numbers with AI-powered feedback">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Letter Tracing Fun! 🎨</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <!-- Favicon -->
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✏️</text></svg>">
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- Header - Compact on mobile -->
+    <header class="app-header">
+      <div class="app-logo">
+        <span class="app-logo-icon">✏️</span>
+        <span class="app-logo-text">Letter Tracing Fun!</span>
+      </div>
+
+      <div class="header-stats">
+        <div class="streak" id="streak-display">
+          <span class="streak-icon">🔥</span>
+          <span class="streak-count" id="streak-count">0</span>
+        </div>
+        <div class="stat stat-compact">
+          <div class="stat-value" id="score-display">0</div>
+          <div class="stat-label">Score</div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn btn-icon" id="settings-btn" title="Settings">⚙️</button>
+        <button class="btn btn-icon" id="dashboard-btn" title="Parent Dashboard">👨‍👩‍👧</button>
+        <button class="btn btn-icon btn-debug" id="debug-btn" title="Debug Mode">🔧</button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="app-main">
+      <!-- Game View - Now focused on drawing -->
+      <div id="game-view" class="view active">
+        <div class="game-layout">
+          <!-- Character hint (small, top) -->
+          <div class="character-hint">
+            <span class="hint-label">Draw:</span>
+            <span class="hint-char" id="target-character">A</span>
+            <button class="btn btn-icon btn-small" id="speak-btn" title="Hear it">🔊</button>
+          </div>
+
+          <!-- Main Drawing Area with Timer Border -->
+          <div class="drawing-area">
+            <div class="timer-border" id="timer-border">
+              <svg class="timer-svg" viewBox="0 0 100 100">
+                <rect class="timer-track" x="2" y="2" width="96" height="96" rx="12" ry="12" />
+                <rect class="timer-progress" id="timer-progress" x="2" y="2" width="96" height="96" rx="12" ry="12" />
+              </svg>
+            </div>
+            <div class="canvas-container" id="canvas-container">
+              <canvas id="trace-overlay"></canvas>
+              <canvas id="drawing-canvas"></canvas>
+            </div>
+          </div>
+
+          <!-- Action buttons -->
+          <div class="action-buttons">
+            <button class="btn btn-secondary btn-action" id="clear-btn">
+              <span class="btn-icon-large">🗑️</span>
+              <span class="btn-text">Clear</span>
+            </button>
+            <button class="btn btn-primary btn-action btn-main" id="submit-btn">
+              <span class="btn-icon-large">✅</span>
+              <span class="btn-text">Check</span>
+            </button>
+            <button class="btn btn-accent btn-action" id="skip-btn">
+              <span class="btn-icon-large">⏭️</span>
+              <span class="btn-text">Skip</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings View -->
+      <div id="settings-view" class="view">
+        <div class="settings-container">
+          <h2 class="settings-title">⚙️ Settings</h2>
+
+          <div class="setting-group">
+            <label class="setting-label">Character Range</label>
+            <div class="setting-options" id="range-options">
+              <button class="setting-option active" data-range="1-10">1-10</button>
+              <button class="setting-option" data-range="0-99">0-99</button>
+              <button class="setting-option" data-range="A-Z">A-Z</button>
+              <button class="setting-option" data-range="a-z">a-z</button>
+              <button class="setting-option" data-range="0-Z">All</button>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Display Mode</label>
+            <div class="setting-options" id="mode-options">
+              <button class="setting-option active" data-mode="both">
+                <span class="option-icon">👁️🔊</span>
+                <span class="option-text">See & Hear</span>
+              </button>
+              <button class="setting-option" data-mode="trace">
+                <span class="option-icon">👁️</span>
+                <span class="option-text">See Only</span>
+              </button>
+              <button class="setting-option" data-mode="audible">
+                <span class="option-icon">🔊</span>
+                <span class="option-text">Hear Only</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Timer</label>
+            <div class="setting-options" id="timer-options">
+              <button class="setting-option" data-timer="10">10s</button>
+              <button class="setting-option" data-timer="20">20s</button>
+              <button class="setting-option" data-timer="30">30s</button>
+              <button class="setting-option active" data-timer="0">∞ Off</button>
+            </div>
+          </div>
+
+          <button class="btn btn-primary btn-large" id="back-to-game-from-settings">🎮 Start Drawing!</button>
+        </div>
+      </div>
+
+      <!-- Dashboard View -->
+      <div id="dashboard-view" class="view">
+        <div class="dashboard">
+          <div class="dashboard-section">
+            <h2 class="dashboard-title">📊 Progress Overview</h2>
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-value" id="total-attempts">0</div>
+                <div class="stat-label">Total Attempts</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="accuracy-rate">0%</div>
+                <div class="stat-label">Accuracy</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="best-streak">0</div>
+                <div class="stat-label">Best Streak</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="dashboard-section">
+            <h2 class="dashboard-title">🏆 Achievements</h2>
+            <div class="badges-grid" id="badges-container">
+              <!-- Badges will be populated by JS -->
+            </div>
+          </div>
+
+          <div class="dashboard-section section-wide">
+            <h2 class="dashboard-title">📝 Character Mastery</h2>
+            <div class="character-grid" id="character-mastery">
+              <!-- Character stats will be populated by JS -->
+            </div>
+          </div>
+
+          <div class="dashboard-section section-wide">
+            <h2 class="dashboard-title">🔧 Data Management</h2>
+            <div class="danger-zone">
+              <p class="danger-warning">⚠️ This action cannot be undone!</p>
+              <button class="btn btn-danger" id="reset-all-btn">🗑️ Reset All Progress</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-actions">
+          <button class="btn btn-primary btn-large" id="back-to-game">🎮 Back to Practice</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Celebration Overlay -->
+  <div class="celebration-overlay" id="celebration-overlay"></div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast">
+    <span id="toast-message"></span>
+  </div>
+
+  <!-- Result Modal -->
+  <div class="modal-backdrop" id="result-modal">
+    <div class="modal modal-compact">
+      <div class="result-content">
+        <div id="result-icon" class="result-emoji">🌟</div>
+        <h2 class="result-title" id="result-title">Great Job!</h2>
+        <p id="result-message" class="result-message"></p>
+        <button class="btn btn-primary btn-large" id="next-btn">Next! ➡️</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="modal-backdrop" id="loading-overlay">
+    <div class="modal modal-compact">
+      <div class="loading-spinner"></div>
+      <p id="loading-message">Loading AI model...</p>
+    </div>
+  </div>
+
+  <!-- Debug Modal -->
+  <div class="modal-backdrop" id="debug-modal">
+    <div class="modal" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2 class="modal-title">🔧 Debug View</h2>
+        <button class="modal-close" id="debug-close">×</button>
+      </div>
+      <div style="padding: 1rem;">
+        <p style="margin-bottom: 1rem; color: var(--color-text-secondary);">
+          Draw something on the canvas, then click "Run Debug" to see what the model sees.
+        </p>
+        <button class="btn btn-primary" id="run-debug-btn" style="margin-bottom: 1rem;">🔍 Run Debug</button>
+
+        <div id="debug-content" style="display: none;">
+          <h3 style="margin: 1rem 0 0.5rem;">Preprocessed Images (28×28)</h3>
+          <div style="display: flex; gap: 2rem; justify-content: center; margin-bottom: 1rem;">
+            <div style="text-align: center;">
+              <p style="font-size: 0.8rem; color: var(--color-text-muted); margin-bottom: 0.5rem;">Your Drawing (scaled)
+              </p>
+              <img id="debug-processed"
+                style="width: 112px; height: 112px; image-rendering: pixelated; border: 2px solid var(--color-primary); border-radius: 8px;" />
+            </div>
+            <div style="text-align: center;">
+              <p style="font-size: 0.8rem; color: var(--color-text-muted); margin-bottom: 0.5rem;">Flipped (model
+                input)</p>
+              <img id="debug-transposed"
+                style="width: 112px; height: 112px; image-rendering: pixelated; border: 2px solid var(--color-accent); border-radius: 8px;" />
+            </div>
+          </div>
+
+          <h3 style="margin: 1rem 0 0.5rem;">Top 10 Predictions</h3>
+          <div id="debug-histogram" style="background: var(--color-surface-alt); padding: 1rem; border-radius: 8px;">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reset Confirmation Modal -->
+  <div class="modal-backdrop" id="reset-confirm-modal">
+    <div class="modal modal-compact">
+      <h2 class="modal-title">⚠️ Confirm Reset</h2>
+      <p style="margin: 1rem 0; text-align: center;">Are you sure you want to delete ALL progress? This cannot be
+        undone.</p>
+      <div style="display: flex; gap: 1rem; justify-content: center;">
+        <button class="btn btn-secondary" id="reset-cancel-btn">Cancel</button>
+        <button class="btn btn-danger" id="reset-confirm-btn">Yes, Reset Everything</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="lib/ort.min.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+
+</html>

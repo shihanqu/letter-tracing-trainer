@@ -1,0 +1,43 @@
+/* ============================================
+   Theme Variables - School Theme
+   ============================================
+   To change themes, modify the @import below
+   or directly change the CSS variable values.
+   ============================================ */
+
+@import url('./themes/school.css');
+
+/* Core variables that can be overridden by themes */
+:root {
+  /* Spacing scale */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  
+  /* Border radius */
+  --radius-sm: 0.5rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
+  --radius-full: 9999px;
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
+  --shadow-glow: 0 0 20px var(--color-primary-glow);
+  
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow: 400ms ease;
+  
+  /* Z-index layers */
+  --z-canvas: 1;
+  --z-overlay: 10;
+  --z-controls: 20;
+  --z-modal: 100;
+  --z-notification: 200;
+}

@@ -1,0 +1,18 @@
+# Python training files (not needed for deployment)
+scripts/data/
+scripts/models/
+scripts/__pycache__/
+*.pyc
+*.pth
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies (if using npm later)
+node_modules/

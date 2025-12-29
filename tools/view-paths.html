@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Path Viewer</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 1rem;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 2rem;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .controls button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            background: #4a4a6a;
+            color: #fff;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .controls button:hover {
+            background: #5a5a8a;
+        }
+
+        .controls button.active {
+            background: #6366f1;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .char-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .char-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #6366f1;
+            transform: translateY(-2px);
+        }
+
+        .char-card.selected {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .char-label {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #6366f1;
+        }
+
+        .char-svg {
+            width: 100px;
+            height: 100px;
+            background: #0f0f1a;
+            border-radius: 8px;
+            margin: 0 auto 0.5rem;
+        }
+
+        .char-svg svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .stroke-count {
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .editor {
+            max-width: 800px;
+            margin: 2rem auto 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: none;
+        }
+
+        .editor.visible {
+            display: block;
+        }
+
+        .editor h2 {
+            margin-bottom: 1rem;
+            color: #f59e0b;
+        }
+
+        .editor-grid {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 1.5rem;
+        }
+
+        .editor-preview {
+            width: 200px;
+            height: 200px;
+            background: #0f0f1a;
+            border-radius: 8px;
+        }
+
+        .editor-preview svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .editor-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .editor-form label {
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+            display: block;
+        }
+
+        .editor-form textarea {
+            width: 100%;
+            height: 100px;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 8px;
+            background: #0f0f1a;
+            color: #fff;
+            font-family: monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+        }
+
+        .editor-form input {
+            width: 60px;
+            padding: 0.5rem;
+            border: none;
+            border-radius: 4px;
+            background: #0f0f1a;
+            color: #fff;
+            text-align: center;
+        }
+
+        .editor-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .editor-actions button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .btn-copy {
+            background: #10b981;
+            color: #fff;
+        }
+
+        .btn-copy:hover {
+            background: #059669;
+        }
+
+        .btn-export {
+            background: #6366f1;
+            color: #fff;
+        }
+
+        .btn-export:hover {
+            background: #4f46e5;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #10b981;
+            color: #fff;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .toast.visible {
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🎨 Character Path Viewer</h1>
+    <p class="subtitle">Click any character to edit its SVG path</p>
+
+    <div class="controls">
+        <button class="active" data-filter="all">All (47)</button>
+        <button data-filter="digits">Digits (0-9)</button>
+        <button data-filter="upper">Uppercase (A-Z)</button>
+        <button data-filter="lower">Lowercase (a-z)</button>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="editor" id="editor">
+        <h2>Edit: <span id="editor-char"></span></h2>
+        <div class="editor-grid">
+            <div class="editor-preview" id="editor-preview"></div>
+            <div class="editor-form">
+                <div>
+                    <label for="path-input">SVG Path (d attribute):</label>
+                    <textarea id="path-input" placeholder="M10,10 L90,90..."></textarea>
+                </div>
+                <div>
+                    <label for="strokes-input">Stroke Count:</label>
+                    <input type="number" id="strokes-input" min="1" max="5" value="1">
+                </div>
+                <div class="editor-actions">
+                    <button class="btn-copy" onclick="copyPathCode()">📋 Copy JS Code</button>
+                    <button class="btn-export" onclick="exportAllPaths()">💾 Export All Paths</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script type="module">
+        // Import templates
+        import { getTemplatePath, getStrokeCount, getAvailableCharacters } from '../js/templates.js';
+
+        const grid = document.getElementById('grid');
+        const editor = document.getElementById('editor');
+        const editorChar = document.getElementById('editor-char');
+        const editorPreview = document.getElementById('editor-preview');
+        const pathInput = document.getElementById('path-input');
+        const strokesInput = document.getElementById('strokes-input');
+
+        let selectedChar = null;
+        let templates = {};
+
+        // Load all templates
+        const chars = getAvailableCharacters();
+        chars.forEach(char => {
+            templates[char] = {
+                path: getTemplatePath(char),
+                strokes: getStrokeCount(char)
+            };
+        });
+
+        // Create SVG for a character
+        function createSVG(path, size = 100) {
+            return `
+        <svg viewBox="0 0 100 100" width="${size}" height="${size}">
+          <path d="${path}" fill="none" stroke="#fff" stroke-width="6" 
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      `;
+        }
+
+        // Render grid
+        function renderGrid(filter = 'all') {
+            grid.innerHTML = '';
+
+            Object.entries(templates).forEach(([char, data]) => {
+                // Filter logic
+                const isDigit = /[0-9]/.test(char);
+                const isUpper = /[A-Z]/.test(char);
+                const isLower = /[a-z]/.test(char);
+
+                if (filter === 'digits' && !isDigit) return;
+                if (filter === 'upper' && !isUpper) return;
+                if (filter === 'lower' && !isLower) return;
+
+                const card = document.createElement('div');
+                card.className = 'char-card' + (char === selectedChar ? ' selected' : '');
+                card.innerHTML = `
+          <div class="char-label">${char}</div>
+          <div class="char-svg">${createSVG(data.path)}</div>
+          <div class="stroke-count">${data.strokes} stroke${data.strokes > 1 ? 's' : ''}</div>
+        `;
+                card.addEventListener('click', () => selectChar(char));
+                grid.appendChild(card);
+            });
+        }
+
+        // Select character for editing
+        function selectChar(char) {
+            selectedChar = char;
+            const data = templates[char];
+
+            editorChar.textContent = char;
+            pathInput.value = data.path;
+            strokesInput.value = data.strokes;
+            updatePreview();
+
+            editor.classList.add('visible');
+            renderGrid(currentFilter);
+
+            // Scroll to editor
+            editor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Update preview when path changes
+        function updatePreview() {
+            editorPreview.innerHTML = createSVG(pathInput.value, 200);
+        }
+
+        // Live preview on input
+        pathInput.addEventListener('input', updatePreview);
+
+        // Filter buttons
+        let currentFilter = 'all';
+        document.querySelectorAll('.controls button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.controls button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                renderGrid(currentFilter);
+            });
+        });
+
+        // Copy path code
+        window.copyPathCode = function () {
+            if (!selectedChar) return;
+
+            const code = `'${selectedChar}': { path: '${pathInput.value}', strokes: ${strokesInput.value} },`;
+            navigator.clipboard.writeText(code).then(() => {
+                showToast('Copied to clipboard!');
+            });
+        };
+
+        // Export all paths
+        window.exportAllPaths = function () {
+            let code = 'const TEMPLATES = {\n';
+
+            // Numbers
+            code += '    // Numbers\n';
+            '0123456789'.split('').forEach(char => {
+                if (templates[char]) {
+                    code += `    '${char}': { path: '${templates[char].path}', strokes: ${templates[char].strokes} },\n`;
+                }
+            });
+
+            // Uppercase
+            code += '\n    // Uppercase Letters\n';
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(char => {
+                if (templates[char]) {
+                    code += `    '${char}': { path: '${templates[char].path}', strokes: ${templates[char].strokes} },\n`;
+                }
+            });
+
+            // Lowercase
+            code += '\n    // Lowercase Letters\n';
+            'abcdefghijklmnopqrstuvwxyz'.split('').forEach(char => {
+                if (templates[char]) {
+                    code += `    '${char}': { path: '${templates[char].path}', strokes: ${templates[char].strokes} },\n`;
+                }
+            });
+
+            code += '};\n';
+
+            navigator.clipboard.writeText(code).then(() => {
+                showToast('All paths exported to clipboard!');
+            });
+        };
+
+        // Toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('visible');
+            setTimeout(() => toast.classList.remove('visible'), 2000);
+        }
+
+        // Initial render
+        renderGrid();
+    </script>
+</body>
+
+</html>
