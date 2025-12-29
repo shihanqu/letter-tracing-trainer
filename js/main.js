@@ -507,14 +507,14 @@ function handleNext() {
 /**
  * Handle timer tick - update border
  */
-function handleTimerTick(seconds) {
-    updateTimerBorder(seconds);
+function handleTimerTick(seconds, progress) {
+    updateTimerBorder(seconds, progress);
 }
 
 /**
  * Update timer border visualization
  */
-function updateTimerBorder(seconds) {
+function updateTimerBorder(seconds, progress) {
     if (!elements.timerProgress) return;
 
     const total = appState.timerTotal;
@@ -526,19 +526,19 @@ function updateTimerBorder(seconds) {
 
     elements.timerProgress.classList.remove('hidden');
 
-    const remaining = seconds !== undefined ? seconds : game.getRemainingTime();
-    const progress = remaining / total;
+    // Use progress directly for smooth animation
+    const p = progress !== undefined ? progress : (seconds / total);
 
     // Calculate stroke-dashoffset (392 is perimeter of the rect)
     const perimeter = 392;
-    const offset = perimeter * (1 - progress);
+    const offset = perimeter * (1 - p);
     elements.timerProgress.style.strokeDashoffset = offset;
 
     // Update color based on time
     elements.timerProgress.classList.remove('warning', 'danger');
-    if (remaining <= 3) {
+    if (seconds <= 3) {
         elements.timerProgress.classList.add('danger');
-    } else if (remaining <= 5) {
+    } else if (seconds <= 5) {
         elements.timerProgress.classList.add('warning');
     }
 }

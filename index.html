@@ -68,15 +68,13 @@
 
           <!-- Main Drawing Area with Timer Border -->
           <div class="drawing-area">
-            <div class="timer-border" id="timer-border">
-              <svg class="timer-svg" viewBox="0 0 100 100">
-                <rect class="timer-track" x="2" y="2" width="96" height="96" rx="12" ry="12" />
-                <rect class="timer-progress" id="timer-progress" x="2" y="2" width="96" height="96" rx="12" ry="12" />
-              </svg>
-            </div>
             <div class="canvas-container" id="canvas-container">
               <canvas id="trace-overlay"></canvas>
               <canvas id="drawing-canvas"></canvas>
+              <svg class="timer-border" id="timer-border" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <rect class="timer-track" x="1" y="1" width="98" height="98" rx="4" ry="4" />
+                <rect class="timer-progress" id="timer-progress" x="1" y="1" width="98" height="98" rx="4" ry="4" />
+              </svg>
             </div>
           </div>
 

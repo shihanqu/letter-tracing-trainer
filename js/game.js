@@ -168,33 +168,55 @@ export function startTimer() {
 
     currentState.timerValue = currentState.timerDuration;
     currentState.isTimerRunning = true;
+    currentState.timerStartTime = performance.now();
+    currentState.timerEndTime = currentState.timerStartTime + (currentState.timerDuration * 1000);
 
     if (onTimerTick) {
-        onTimerTick(currentState.timerValue);
+        onTimerTick(currentState.timerValue, 1.0); // progress = 1.0 at start
     }
 
-    currentState.timerInterval = setInterval(() => {
-        if (currentState.isPaused) return;
-
-        currentState.timerValue--;
-
-        if (onTimerTick) {
-            onTimerTick(currentState.timerValue);
+    // Use requestAnimationFrame for smooth updates
+    function updateTimer() {
+        if (!currentState.isTimerRunning) return;
+        if (currentState.isPaused) {
+            currentState.timerAnimationFrame = requestAnimationFrame(updateTimer);
+            return;
         }
 
-        if (currentState.timerValue <= 0) {
+        const now = performance.now();
+        const elapsed = now - currentState.timerStartTime;
+        const total = currentState.timerDuration * 1000;
+        const remaining = Math.max(0, total - elapsed);
+        const progress = remaining / total;
+
+        currentState.timerValue = Math.ceil(remaining / 1000);
+
+        if (onTimerTick) {
+            onTimerTick(currentState.timerValue, progress);
+        }
+
+        if (remaining <= 0) {
             stopTimer();
             if (onTimerEnd) {
                 onTimerEnd();
             }
+            return;
         }
-    }, 1000);
+
+        currentState.timerAnimationFrame = requestAnimationFrame(updateTimer);
+    }
+
+    currentState.timerAnimationFrame = requestAnimationFrame(updateTimer);
 }
 
 /**
  * Stop the timer
  */
 export function stopTimer() {
+    if (currentState.timerAnimationFrame) {
+        cancelAnimationFrame(currentState.timerAnimationFrame);
+        currentState.timerAnimationFrame = null;
+    }
     if (currentState.timerInterval) {
         clearInterval(currentState.timerInterval);
         currentState.timerInterval = null;
