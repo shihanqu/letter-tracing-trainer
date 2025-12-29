@@ -1,6 +1,6 @@
 # Letter Tracing Fun! ✏️
 
-> **🌐 [Try the Live App](https://YOUR_USERNAME.github.io/letter-tracing-fun/)** ← Replace with your GitHub Pages URL after deployment
+> **🌐 [Try the Live App](https://shihanqu.github.io/letter-tracing-trainer/)** 
 
 A delightful, AI-powered tracing app to help kids learn to write letters and numbers. Features real-time handwriting recognition using machine learning, right in the browser!
 
