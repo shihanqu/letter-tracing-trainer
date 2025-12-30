@@ -429,7 +429,7 @@ function processResult(isCorrect, targetChar, predictedChar, confidence = 0, isL
     if (result.newAchievements.length > 0) {
         setTimeout(() => {
             result.newAchievements.forEach(achievement => {
-                dashboard.showBadgeUnlock(achievement);
+                dashboard.showBadgeUnlock(achievement, game.pauseTimer, game.resumeTimer);
             });
         }, 1500);
     }

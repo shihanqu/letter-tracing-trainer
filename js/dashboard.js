@@ -53,9 +53,12 @@ export function renderBadges() {
     const achievements = getAllAchievements();
 
     container.innerHTML = achievements.map(achievement => `
-    <div class="badge ${achievement.unlocked ? 'badge-unlocked' : 'badge-locked'}" 
-         title="${achievement.name}: ${achievement.description}">
-      ${achievement.icon}
+    <div class="badge-item ${achievement.unlocked ? 'unlocked' : 'locked'}" 
+         title="${achievement.description}">
+      <div class="badge ${achievement.unlocked ? 'badge-unlocked' : 'badge-locked'}">
+        ${achievement.icon}
+      </div>
+      <span class="badge-name">${achievement.name}</span>
     </div>
   `).join('');
 }
@@ -107,11 +110,23 @@ export function renderCharacterMastery() {
 
 /**
  * Show badge unlock animation
+ * @param {object} achievement - The achievement object
+ * @param {function} pauseTimer - Optional callback to pause game timer
+ * @param {function} resumeTimer - Optional callback to resume game timer
  */
-export function showBadgeUnlock(achievement) {
-    // Create overlay
+export function showBadgeUnlock(achievement, pauseTimer = null, resumeTimer = null) {
+    // Pause the timer if callback provided
+    if (pauseTimer) {
+        pauseTimer();
+    }
+
+    // Create modal backdrop for centering
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop visible';
+    backdrop.style.zIndex = '10000';
+
     const overlay = document.createElement('div');
-    overlay.className = 'badge-unlock-animation';
+    overlay.className = 'badge-unlock-modal';
     overlay.innerHTML = `
     <div class="badge badge-unlocked" style="width: 100px; height: 100px; font-size: 50px;">
       ${achievement.icon}
@@ -121,15 +136,38 @@ export function showBadgeUnlock(achievement) {
       <strong>${achievement.name}</strong><br>
       <small>${achievement.description}</small>
     </div>
+    <button class="btn btn-primary" id="badge-dismiss-btn">Continue</button>
   `;
 
-    document.body.appendChild(overlay);
+    backdrop.appendChild(overlay);
+    document.body.appendChild(backdrop);
 
-    // Remove after animation
-    setTimeout(() => {
-        overlay.remove();
+    // Handle dismiss
+    const dismissBtn = overlay.querySelector('#badge-dismiss-btn');
+    const dismiss = () => {
+        backdrop.remove();
         renderBadges(); // Refresh badges display
-    }, 3000);
+        // Resume the timer if callback provided
+        if (resumeTimer) {
+            resumeTimer();
+        }
+    };
+
+    dismissBtn?.addEventListener('click', dismiss);
+
+    // Also dismiss on backdrop click
+    backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) {
+            dismiss();
+        }
+    });
+
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        if (document.body.contains(backdrop)) {
+            dismiss();
+        }
+    }, 5000);
 }
 
 /**

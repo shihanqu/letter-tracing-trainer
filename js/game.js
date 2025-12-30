@@ -287,7 +287,7 @@ export function predictionToLabel(index) {
  * Characters that allow "loose" matching (top 2 predictions accepted)
  * These are commonly confused character pairs
  */
-const LOOSE_MATCH_CHARS = ['I', '1', 'S', '5', 'b', '6', '9', 'q'];
+const LOOSE_MATCH_CHARS = ['I', '1', 'S', '5', 'b', '6', '9', 'q', '0', 'O'];
 
 /**
  * Check if prediction matches target (accounting for case)
