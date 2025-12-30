@@ -14,7 +14,7 @@ let hasDrawing = false;
 
 // Drawing settings
 const settings = {
-    lineWidth: 20,
+    lineWidth: 12,  // Reduced from 20 - thinner strokes match EMNIST better
     lineColor: '#FFFFFF',
     lineCap: 'round',
     lineJoin: 'round',
@@ -311,16 +311,35 @@ export function preprocessForModel() {
     const scale = Math.min(20 / w, 20 / h);
     const scaledW = w * scale;
     const scaledH = h * scale;
-    const offsetX = (28 - scaledW) / 2;
-    const offsetY = (28 - scaledH) / 2;
 
-    // Draw scaled and centered
+    // First, draw scaled image to temp canvas (centered by bounding box initially)
+    const tempCanvas2 = document.createElement('canvas');
+    const tempCtx2 = tempCanvas2.getContext('2d');
+    tempCanvas2.width = 28;
+    tempCanvas2.height = 28;
+    tempCtx2.fillStyle = 'black';
+    tempCtx2.fillRect(0, 0, 28, 28);
+
+    // Draw at center for now
+    const initialOffsetX = (28 - scaledW) / 2;
+    const initialOffsetY = (28 - scaledH) / 2;
+    tempCtx2.drawImage(canvas, x, y, w, h, initialOffsetX, initialOffsetY, scaledW, scaledH);
+
+    // Calculate center of mass of the scaled image
+    const tempData = tempCtx2.getImageData(0, 0, 28, 28);
+    const com = calculateCenterOfMass(tempData);
+
+    // Calculate offset to move center of mass to image center (14, 14)
+    const comOffsetX = 14 - com.x;
+    const comOffsetY = 14 - com.y;
+
+    // Draw final image with center of mass at center
     tempCtx.fillStyle = 'black';
     tempCtx.fillRect(0, 0, 28, 28);
     tempCtx.drawImage(
         canvas,
         x, y, w, h,
-        offsetX, offsetY, scaledW, scaledH
+        initialOffsetX + comOffsetX, initialOffsetY + comOffsetY, scaledW, scaledH
     );
 
     // Get pixel data and convert to grayscale
@@ -380,7 +399,7 @@ export function getDebugData() {
         };
     }
 
-    // Step 1: Create 28x28 scaled version
+    // Step 1: Create 28x28 scaled version with center of mass centering
     const scaledCanvas = document.createElement('canvas');
     const scaledCtx = scaledCanvas.getContext('2d');
     scaledCanvas.width = 28;
@@ -390,12 +409,28 @@ export function getDebugData() {
     const scale = Math.min(20 / w, 20 / h);
     const scaledW = w * scale;
     const scaledH = h * scale;
-    const offsetX = (28 - scaledW) / 2;
-    const offsetY = (28 - scaledH) / 2;
+    const initialOffsetX = (28 - scaledW) / 2;
+    const initialOffsetY = (28 - scaledH) / 2;
 
+    // First pass: draw centered by bounding box
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCanvas.width = 28;
+    tempCanvas.height = 28;
+    tempCtx.fillStyle = 'black';
+    tempCtx.fillRect(0, 0, 28, 28);
+    tempCtx.drawImage(canvas, x, y, w, h, initialOffsetX, initialOffsetY, scaledW, scaledH);
+
+    // Calculate center of mass
+    const tempData = tempCtx.getImageData(0, 0, 28, 28);
+    const com = calculateCenterOfMass(tempData);
+    const comOffsetX = 14 - com.x;
+    const comOffsetY = 14 - com.y;
+
+    // Second pass: draw with center of mass at center
     scaledCtx.fillStyle = 'black';
     scaledCtx.fillRect(0, 0, 28, 28);
-    scaledCtx.drawImage(canvas, x, y, w, h, offsetX, offsetY, scaledW, scaledH);
+    scaledCtx.drawImage(canvas, x, y, w, h, initialOffsetX + comOffsetX, initialOffsetY + comOffsetY, scaledW, scaledH);
 
     const processedDataUrl = scaledCanvas.toDataURL();
 
@@ -472,6 +507,43 @@ function findBoundingBox(imageData) {
         y: minY,
         w: maxX - minX + 1,
         h: maxY - minY + 1
+    };
+}
+
+/**
+ * Calculate center of mass of an image
+ * This is the brightness-weighted centroid, matching MNIST/EMNIST preprocessing
+ */
+function calculateCenterOfMass(imageData) {
+    const { width, height, data } = imageData;
+    let totalMass = 0;
+    let sumX = 0;
+    let sumY = 0;
+
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const offset = (y * width + x) * 4;
+            // Use luminance as mass (white pixels have more mass)
+            const r = data[offset];
+            const g = data[offset + 1];
+            const b = data[offset + 2];
+            const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+
+            if (luminance > 10) {  // Threshold to ignore near-black pixels
+                totalMass += luminance;
+                sumX += x * luminance;
+                sumY += y * luminance;
+            }
+        }
+    }
+
+    if (totalMass === 0) {
+        return { x: width / 2, y: height / 2 };
+    }
+
+    return {
+        x: sumX / totalMass,
+        y: sumY / totalMass
     };
 }
 
