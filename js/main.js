@@ -132,7 +132,7 @@ function cacheElements() {
         debugBtn: document.getElementById('debug-btn'),
         debugModal: document.getElementById('debug-modal'),
         debugClose: document.getElementById('debug-close'),
-        runDebugBtn: document.getElementById('run-debug-btn'),
+        debugMessage: document.getElementById('debug-message'),
         debugContent: document.getElementById('debug-content'),
         debugProcessed: document.getElementById('debug-processed'),
         debugTransposed: document.getElementById('debug-transposed'),
@@ -165,7 +165,6 @@ function setupEventListeners() {
     // Debug
     elements.debugBtn?.addEventListener('click', showDebugModal);
     elements.debugClose?.addEventListener('click', hideDebugModal);
-    elements.runDebugBtn?.addEventListener('click', runDebug);
 
     // Control options
     setupControlOptions();
@@ -368,10 +367,12 @@ function handleClear() {
 /**
  * Handle submit button
  */
-async function handleSubmit() {
+async function handleSubmit(autoSubmit = false) {
     if (!canvas.hasContent()) {
-        showToast('Draw something first!', 'info');
-        return;
+        if (!autoSubmit) {
+            showToast('Draw something first!', 'info');
+        }
+        return { submitted: false };
     }
 
     game.stopTimer();
@@ -382,8 +383,8 @@ async function handleSubmit() {
     if (!appState.modelReady) {
         // Demo mode - random result
         const isCorrect = Math.random() > 0.3;
-        processResult(isCorrect, targetChar, isCorrect ? targetChar : 'X');
-        return;
+        processResult(isCorrect, targetChar, isCorrect ? targetChar : 'X', 0, false);
+        return { submitted: true };
     }
 
     try {
@@ -395,20 +396,22 @@ async function handleSubmit() {
 
         console.log('Prediction:', prediction);
 
-        // Check if correct
-        const isCorrect = game.isPredictionCorrect(prediction.label, targetChar);
+        // Use loose matching for confusable characters
+        const looseResult = game.isPredictionCorrectLoose(prediction.allPredictions, targetChar);
 
-        processResult(isCorrect, targetChar, prediction.label, prediction.confidence);
+        processResult(looseResult.isCorrect, targetChar, looseResult.matchedPrediction || prediction.label, prediction.confidence, looseResult.isLooseMatch);
+        return { submitted: true };
     } catch (error) {
         console.error('Prediction error:', error);
         showToast('Prediction failed: ' + error.message, 'error');
+        return { submitted: false };
     }
 }
 
 /**
  * Process the result of a submission
  */
-function processResult(isCorrect, targetChar, predictedChar, confidence = 0) {
+function processResult(isCorrect, targetChar, predictedChar, confidence = 0, isLooseMatch = false) {
     // Record attempt
     const result = achievements.recordAttempt(targetChar, isCorrect);
 
@@ -417,7 +420,7 @@ function processResult(isCorrect, targetChar, predictedChar, confidence = 0) {
 
     // Show result
     if (isCorrect) {
-        showCorrectResult(result);
+        showCorrectResult(result, isLooseMatch);
     } else {
         showIncorrectResult(predictedChar, result);
     }
@@ -435,7 +438,7 @@ function processResult(isCorrect, targetChar, predictedChar, confidence = 0) {
 /**
  * Show correct result
  */
-function showCorrectResult(result) {
+function showCorrectResult(result, isLooseMatch = false) {
     // Flash effect
     showFlash('success');
 
@@ -445,11 +448,15 @@ function showCorrectResult(result) {
     // Speech feedback
     speech.speakCorrect();
 
-    // Show modal
+    // Show modal - slightly different message for loose matches
+    const message = isLooseMatch
+        ? 'Close enough! ' + getStreakMessage(result.streakResult.currentStreak)
+        : getStreakMessage(result.streakResult.currentStreak);
+
     showResultModal({
         title: '🎉 Correct!',
         icon: '⭐',
-        message: getStreakMessage(result.streakResult.currentStreak)
+        message: message
     });
 }
 
@@ -546,18 +553,22 @@ function updateTimerBorder(seconds, progress) {
 /**
  * Handle timer end
  */
-function handleTimerEnd() {
-    // Time's up - treat as skip
+async function handleTimerEnd() {
+    // Time's up - auto-submit if there's content
     speech.speak("Time's up!");
-    showToast("Time's up! Try again.", 'info');
 
-    // Record as incorrect
-    const targetChar = game.getCurrentCharacter();
-    achievements.recordAttempt(targetChar, false);
-    updateStatsDisplay();
-
-    // Start new round after delay
-    setTimeout(startNewRound, 1500);
+    if (canvas.hasContent()) {
+        // Auto-submit the drawing
+        showToast("Time's up! Checking your drawing...", 'info');
+        await handleSubmit(true);
+    } else {
+        // No content - treat as skip
+        showToast("Time's up! Try again.", 'info');
+        const targetChar = game.getCurrentCharacter();
+        achievements.recordAttempt(targetChar, false);
+        updateStatsDisplay();
+        setTimeout(startNewRound, 1500);
+    }
 }
 
 /**
@@ -727,11 +738,12 @@ function createConfetti() {
 }
 
 /**
- * Show debug modal
+ * Show debug modal and immediately run analysis
  */
-function showDebugModal() {
+async function showDebugModal() {
     elements.debugModal?.classList.add('visible');
-    elements.debugContent.style.display = 'none';
+    // Immediately run debug analysis
+    await runDebug();
 }
 
 /**
@@ -745,16 +757,33 @@ function hideDebugModal() {
  * Run debug - show preprocessed image and predictions
  */
 async function runDebug() {
+    // Show message and hide content if no canvas content
     if (!canvas.hasContent()) {
-        showToast('Draw something first!', 'info');
+        if (elements.debugMessage) {
+            elements.debugMessage.textContent = 'Draw something on the canvas first, then click the debug button again.';
+            elements.debugMessage.style.display = 'block';
+        }
+        // Hide the actual debug content
+        const contentParts = elements.debugContent?.querySelectorAll('h3, div');
+        contentParts?.forEach(el => el.style.display = 'none');
         return;
     }
+
+    // Show content, hide message
+    if (elements.debugMessage) {
+        elements.debugMessage.style.display = 'none';
+    }
+    const contentParts = elements.debugContent?.querySelectorAll('h3, div');
+    contentParts?.forEach(el => el.style.display = '');
 
     // Get debug visualization data
     const debugData = canvas.getDebugData();
 
     if (!debugData || !debugData.processedDataUrl) {
-        showToast('No drawing to analyze', 'info');
+        if (elements.debugMessage) {
+            elements.debugMessage.textContent = 'Unable to process drawing.';
+            elements.debugMessage.style.display = 'block';
+        }
         return;
     }
 

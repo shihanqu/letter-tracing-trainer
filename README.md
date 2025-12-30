@@ -4,8 +4,6 @@
 
 A delightful, AI-powered tracing app to help kids learn to write letters and numbers. Features real-time handwriting recognition using machine learning, right in the browser!
 
-![Letter Tracing Fun Screenshot](screenshot.png)
-
 ## ✨ Features
 
 ### 🎨 Interactive Drawing

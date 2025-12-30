@@ -233,13 +233,15 @@ h6 {
 /* Canvas Container */
 .canvas-container {
     position: relative;
-    width: min(85vw, 85vh, 500px);
-    height: min(85vw, 85vh, 500px);
+    /* Use calc to ensure it fits: viewport height - header(60px) - hint(50px) - buttons(80px) - padding */
+    width: min(85vw, calc(100vh - 220px), calc(100vw - 32px), 500px);
+    height: min(85vw, calc(100vh - 220px), calc(100vw - 32px), 500px);
     aspect-ratio: 1;
     background: var(--color-canvas-bg);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
     overflow: hidden;
+    flex-shrink: 1;
 }
 
 .canvas-container::before {

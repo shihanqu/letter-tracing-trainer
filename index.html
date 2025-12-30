@@ -231,12 +231,9 @@
         <button class="modal-close" id="debug-close">×</button>
       </div>
       <div style="padding: 1rem;">
-        <p style="margin-bottom: 1rem; color: var(--color-text-secondary);">
-          Draw something on the canvas, then click "Run Debug" to see what the model sees.
-        </p>
-        <button class="btn btn-primary" id="run-debug-btn" style="margin-bottom: 1rem;">🔍 Run Debug</button>
-
-        <div id="debug-content" style="display: none;">
+        <div id="debug-content">
+          <p id="debug-message" style="margin-bottom: 1rem; color: var(--color-text-secondary); text-align: center;">
+          </p>
           <h3 style="margin: 1rem 0 0.5rem;">Preprocessed Images (28×28)</h3>
           <div style="display: flex; gap: 2rem; justify-content: center; margin-bottom: 1rem;">
             <div style="text-align: center;">

@@ -284,7 +284,14 @@ export function predictionToLabel(index) {
 }
 
 /**
+ * Characters that allow "loose" matching (top 2 predictions accepted)
+ * These are commonly confused character pairs
+ */
+const LOOSE_MATCH_CHARS = ['I', '1', 'S', '5', 'b', '6', '9', 'q'];
+
+/**
  * Check if prediction matches target (accounting for case)
+ * For standard matching, only checks top prediction
  */
 export function isPredictionCorrect(prediction, target) {
     // Direct match
@@ -294,4 +301,39 @@ export function isPredictionCorrect(prediction, target) {
     if (prediction.toLowerCase() === target.toLowerCase()) return true;
 
     return false;
+}
+
+/**
+ * Check if prediction matches target with loose matching
+ * For confusable characters, accepts top 2 predictions
+ * @param {Array} predictions - Array of {label, probability} sorted by probability desc
+ * @param {string} target - The target character
+ * @returns {object} {isCorrect: boolean, matchedPrediction: string|null, isLooseMatch: boolean}
+ */
+export function isPredictionCorrectLoose(predictions, target) {
+    if (!predictions || predictions.length === 0) {
+        return { isCorrect: false, matchedPrediction: null, isLooseMatch: false };
+    }
+
+    const topPrediction = predictions[0]?.label;
+
+    // Check if target is in the loose match list
+    const isLooseChar = LOOSE_MATCH_CHARS.some(c =>
+        c === target || c.toLowerCase() === target.toLowerCase()
+    );
+
+    // Standard match - check top prediction
+    if (isPredictionCorrect(topPrediction, target)) {
+        return { isCorrect: true, matchedPrediction: topPrediction, isLooseMatch: false };
+    }
+
+    // Loose match - check top 2 predictions for confusable characters
+    if (isLooseChar && predictions.length >= 2) {
+        const secondPrediction = predictions[1]?.label;
+        if (isPredictionCorrect(secondPrediction, target)) {
+            return { isCorrect: true, matchedPrediction: secondPrediction, isLooseMatch: true };
+        }
+    }
+
+    return { isCorrect: false, matchedPrediction: topPrediction, isLooseMatch: false };
 }
