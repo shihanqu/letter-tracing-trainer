@@ -14,7 +14,7 @@ let hasDrawing = false;
 
 // Drawing settings
 const settings = {
-    lineWidth: 12,  // Reduced from 20 - thinner strokes match EMNIST better
+    lineWidth: 24,  // Thicker strokes for better recognition
     lineColor: '#FFFFFF',
     lineCap: 'round',
     lineJoin: 'round',
@@ -367,8 +367,11 @@ export function preprocessForModel() {
             // Calculate luminance
             const luminance = (0.299 * r + 0.587 * g + 0.114 * b) * (a / 255);
 
-            // Normalize to [0, 1]
-            result[dstIdx] = luminance / 255;
+            // Normalize to [0, 1] first
+            const normalized = luminance / 255;
+
+            // Apply MNIST normalization (mean=0.1307, std=0.3081) to match training
+            result[dstIdx] = (normalized - 0.1307) / 0.3081;
         }
     }
 
