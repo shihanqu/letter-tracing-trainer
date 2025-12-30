@@ -501,6 +501,40 @@ h6 {
     color: var(--color-text-muted);
 }
 
+/* Achievement Detail Modal */
+.achievement-detail-modal {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+    background: var(--color-surface);
+    padding: var(--space-xl);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+    max-width: 300px;
+    animation: badge-pop 0.3s ease-out;
+}
+
+.achievement-detail-name {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    color: var(--color-primary);
+    margin: 0;
+}
+
+.achievement-detail-desc {
+    font-size: var(--text-base);
+    color: var(--color-text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.achievement-detail-status {
+    font-size: var(--text-sm);
+    margin: 0;
+}
+
 /* Character Grid */
 .character-grid {
     display: grid;

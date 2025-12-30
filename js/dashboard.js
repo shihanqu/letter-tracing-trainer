@@ -52,15 +52,60 @@ export function renderBadges() {
 
     const achievements = getAllAchievements();
 
-    container.innerHTML = achievements.map(achievement => `
+    container.innerHTML = achievements.map((achievement, index) => `
     <div class="badge-item ${achievement.unlocked ? 'unlocked' : 'locked'}" 
-         title="${achievement.description}">
+         data-achievement-index="${index}">
       <div class="badge ${achievement.unlocked ? 'badge-unlocked' : 'badge-locked'}">
         ${achievement.icon}
       </div>
       <span class="badge-name">${achievement.name}</span>
     </div>
   `).join('');
+
+    // Add click handlers
+    container.querySelectorAll('.badge-item').forEach((item, index) => {
+        item.addEventListener('click', () => {
+            showAchievementDetails(achievements[index]);
+        });
+        item.style.cursor = 'pointer';
+    });
+}
+
+/**
+ * Show achievement details popup
+ */
+function showAchievementDetails(achievement) {
+    // Create modal
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop visible';
+    backdrop.style.zIndex = '9999';
+
+    const modal = document.createElement('div');
+    modal.className = 'achievement-detail-modal';
+    modal.innerHTML = `
+        <div class="badge ${achievement.unlocked ? 'badge-unlocked' : 'badge-locked'}" 
+             style="width: 80px; height: 80px; font-size: 40px;">
+            ${achievement.icon}
+        </div>
+        <h3 class="achievement-detail-name">${achievement.name}</h3>
+        <p class="achievement-detail-desc">${achievement.description}</p>
+        <p class="achievement-detail-status">
+            ${achievement.unlocked
+            ? '✅ <strong>Unlocked!</strong>'
+            : '🔒 <em>Not yet unlocked</em>'}
+        </p>
+        <button class="btn btn-primary">OK</button>
+    `;
+
+    backdrop.appendChild(modal);
+    document.body.appendChild(backdrop);
+
+    // Dismiss handlers
+    const dismiss = () => backdrop.remove();
+    modal.querySelector('button').addEventListener('click', dismiss);
+    backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) dismiss();
+    });
 }
 
 /**
