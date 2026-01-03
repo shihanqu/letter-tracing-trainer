@@ -144,33 +144,72 @@ function cacheElements() {
  * Set up event listeners
  */
 function setupEventListeners() {
-    // Action buttons
-    elements.speakBtn?.addEventListener('click', handleSpeak);
-    elements.clearBtn?.addEventListener('click', handleClear);
-    elements.submitBtn?.addEventListener('click', handleSubmit);
-    elements.skipBtn?.addEventListener('click', handleSkip);
-    elements.nextBtn?.addEventListener('click', handleNext);
+    // Action buttons - use kid-friendly touch handlers
+    addKidFriendlyTouch(elements.speakBtn, handleSpeak);
+    addKidFriendlyTouch(elements.clearBtn, handleClear);
+    addKidFriendlyTouch(elements.submitBtn, handleSubmit);
+    addKidFriendlyTouch(elements.skipBtn, handleSkip);
+    addKidFriendlyTouch(elements.nextBtn, handleNext);
 
     // Navigation
-    elements.settingsBtn?.addEventListener('click', () => switchView('settings'));
-    elements.dashboardBtn?.addEventListener('click', () => switchView('dashboard'));
-    elements.backToGameBtn?.addEventListener('click', () => switchView('game'));
-    elements.backToGameFromSettingsBtn?.addEventListener('click', () => switchView('game'));
+    addKidFriendlyTouch(elements.settingsBtn, () => switchView('settings'));
+    addKidFriendlyTouch(elements.dashboardBtn, () => switchView('dashboard'));
+    addKidFriendlyTouch(elements.backToGameBtn, () => switchView('game'));
+    addKidFriendlyTouch(elements.backToGameFromSettingsBtn, () => switchView('game'));
 
     // Reset functionality
-    elements.resetAllBtn?.addEventListener('click', showResetConfirm);
-    elements.resetConfirmBtn?.addEventListener('click', handleResetAll);
-    elements.resetCancelBtn?.addEventListener('click', hideResetConfirm);
+    addKidFriendlyTouch(elements.resetAllBtn, showResetConfirm);
+    addKidFriendlyTouch(elements.resetConfirmBtn, handleResetAll);
+    addKidFriendlyTouch(elements.resetCancelBtn, hideResetConfirm);
 
     // Debug
-    elements.debugBtn?.addEventListener('click', showDebugModal);
-    elements.debugClose?.addEventListener('click', hideDebugModal);
+    addKidFriendlyTouch(elements.debugBtn, showDebugModal);
+    addKidFriendlyTouch(elements.debugClose, hideDebugModal);
 
     // Control options
     setupControlOptions();
 
     // Keyboard shortcuts
     document.addEventListener('keydown', handleKeyboard);
+}
+
+/**
+ * Add kid-friendly touch handling to an element
+ * Triggers on touchend regardless of drag movement (toddlers often drag while pressing)
+ * Also works with regular clicks for mouse users
+ */
+function addKidFriendlyTouch(element, callback) {
+    if (!element) return;
+
+    let touchStarted = false;
+
+    // Touch events - trigger on touchend even if finger moved
+    element.addEventListener('touchstart', (e) => {
+        touchStarted = true;
+        element.classList.add('touch-active');
+    }, { passive: true });
+
+    element.addEventListener('touchend', (e) => {
+        if (touchStarted) {
+            e.preventDefault();
+            element.classList.remove('touch-active');
+            touchStarted = false;
+            callback();
+        }
+    });
+
+    element.addEventListener('touchcancel', () => {
+        element.classList.remove('touch-active');
+        touchStarted = false;
+    });
+
+    // Regular click for mouse users
+    element.addEventListener('click', (e) => {
+        // Only trigger if it wasn't a touch event
+        if (!touchStarted) {
+            callback();
+        }
+    });
 }
 
 /**
@@ -645,6 +684,7 @@ function updateLoadingMessage(message) {
 
 /**
  * Show result modal
+ * Entire modal is clickable (kid-friendly) - touch anywhere to continue
  */
 function showResultModal({ title, icon, message }) {
     if (elements.resultTitle) elements.resultTitle.textContent = title;
@@ -652,12 +692,54 @@ function showResultModal({ title, icon, message }) {
     if (elements.resultMessage) elements.resultMessage.textContent = message;
 
     elements.resultModal?.classList.add('visible');
+
+    // Make entire modal clickable (kid-friendly)
+    // Remove any previous handlers first
+    if (elements.resultModal._kidTouchHandler) {
+        elements.resultModal.removeEventListener('touchend', elements.resultModal._kidTouchHandler);
+        elements.resultModal.removeEventListener('click', elements.resultModal._kidClickHandler);
+    }
+
+    let touchStarted = false;
+
+    const touchStartHandler = () => {
+        touchStarted = true;
+    };
+
+    const touchEndHandler = (e) => {
+        if (touchStarted) {
+            e.preventDefault();
+            touchStarted = false;
+            handleNext();
+        }
+    };
+
+    const clickHandler = () => {
+        if (!touchStarted) {
+            handleNext();
+        }
+    };
+
+    elements.resultModal.addEventListener('touchstart', touchStartHandler, { passive: true });
+    elements.resultModal.addEventListener('touchend', touchEndHandler);
+    elements.resultModal.addEventListener('click', clickHandler);
+
+    // Store handlers for cleanup
+    elements.resultModal._kidTouchHandler = touchEndHandler;
+    elements.resultModal._kidClickHandler = clickHandler;
+    elements.resultModal._kidTouchStartHandler = touchStartHandler;
 }
 
 /**
  * Hide result modal
  */
 function hideResultModal() {
+    // Clean up event handlers
+    if (elements.resultModal?._kidTouchHandler) {
+        elements.resultModal.removeEventListener('touchstart', elements.resultModal._kidTouchStartHandler);
+        elements.resultModal.removeEventListener('touchend', elements.resultModal._kidTouchHandler);
+        elements.resultModal.removeEventListener('click', elements.resultModal._kidClickHandler);
+    }
     elements.resultModal?.classList.remove('visible');
 }
 

@@ -655,6 +655,30 @@ h6 {
     color: var(--color-text-secondary);
 }
 
+/* Kid-friendly touch states */
+.btn.touch-active,
+.setting-option.touch-active {
+    transform: scale(0.95);
+    opacity: 0.8;
+}
+
+/* Make result modal look interactive */
+#result-modal {
+    cursor: pointer;
+}
+
+#result-modal .modal {
+    cursor: pointer;
+}
+
+#result-modal .result-content::after {
+    content: 'Tap anywhere to continue';
+    display: block;
+    margin-top: var(--space-md);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+}
+
 /* Utility Classes */
 .hidden {
     display: none !important;
